@@ -246,7 +246,7 @@ class BaseInvenTreeSetting(models.Model):
 
         If a particular setting is not present, create it with the default value
         """
-        cache_key = f'BUILD_DEFAULT_VALUES:{str(cls.__name__)}'
+        cache_key = f'BUILD_DEFAULT_VALUES:{cls.__name__!s}'
 
         try:
             if InvenTree.helpers.str2bool(cache.get(cache_key, False)):
@@ -329,7 +329,7 @@ class BaseInvenTreeSetting(models.Model):
         - The unique KEY string
         - Any key:value kwargs associated with the particular setting type (e.g. user-id)
         """
-        key = f'{str(cls.__name__)}:{setting_key}'
+        key = f'{cls.__name__!s}:{setting_key}'
 
         for k, v in kwargs.items():
             key += f'_{k}:{v}'
@@ -2060,7 +2060,7 @@ class InvenTreeSetting(BaseInvenTreeSetting):
             'description': _(
                 'Check that all plugins are installed on startup - enable in container environments'
             ),
-            'default': str(os.getenv('INVENTREE_DOCKER', False)).lower()
+            'default': str(os.getenv('INVENTREE_DOCKER', 'False')).lower()
             in ['1', 'true'],
             'validator': bool,
             'requires_restart': True,
@@ -3090,13 +3090,10 @@ class CustomUnit(models.Model):
         """Ensure that the custom unit is unique."""
         super().validate_unique(exclude)
 
-        if self.symbol:
-            if (
-                CustomUnit.objects.filter(symbol=self.symbol)
-                .exclude(pk=self.pk)
-                .exists()
-            ):
-                raise ValidationError({'symbol': _('Unit symbol must be unique')})
+        if self.symbol and (
+            CustomUnit.objects.filter(symbol=self.symbol).exclude(pk=self.pk).exists()
+        ):
+            raise ValidationError({'symbol': _('Unit symbol must be unique')})
 
     def clean(self):
         """Validate that the provided custom unit is indeed valid."""
