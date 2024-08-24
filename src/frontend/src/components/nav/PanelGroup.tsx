@@ -20,29 +20,34 @@ import {
   useParams
 } from 'react-router-dom';
 
+import { ModelType } from '../../enums/ModelType';
 import { identifierString } from '../../functions/conversion';
 import { cancelEvent } from '../../functions/events';
 import { navigateToLink } from '../../functions/navigation';
+import { usePluginPanels } from '../../hooks/UsePluginPanels';
 import { useLocalState } from '../../states/LocalState';
 import { Boundary } from '../Boundary';
 import { StylishText } from '../items/StylishText';
+import { PanelType } from './Panel';
 
 /**
- * Type used to specify a single panel in a panel group
+ * Set of properties which define a panel group:
+ *
+ * @param pageKey - Unique key for this panel group
+ * @param panels - List of panels to display
+ * @param model - The target model for this panel group (e.g. 'part' / 'salesorder')
+ * @param id - The target ID for this panel group (set to *null* for groups which do not target a specific model instance)
+ * @param instance - The target model instance for this panel group
+ * @param selectedPanel - The currently selected panel
+ * @param onPanelChange - Callback when the active panel changes
+ * @param collapsible - If true, the panel group can be collapsed (defaults to true)
  */
-export type PanelType = {
-  name: string;
-  label: string;
-  icon?: ReactNode;
-  content: ReactNode;
-  hidden?: boolean;
-  disabled?: boolean;
-  showHeadline?: boolean;
-};
-
 export type PanelProps = {
   pageKey: string;
   panels: PanelType[];
+  instance?: any;
+  model?: ModelType | string;
+  id?: number | null;
   selectedPanel?: string;
   onPanelChange?: (panel: string) => void;
   collapsible?: boolean;
@@ -53,15 +58,30 @@ function BasePanelGroup({
   panels,
   onPanelChange,
   selectedPanel,
+  instance,
+  model,
+  id,
   collapsible = true
 }: Readonly<PanelProps>): ReactNode {
   const location = useLocation();
   const navigate = useNavigate();
   const { panel } = useParams();
 
+  // Hook to load plugins for this panel
+  const pluginPanels = usePluginPanels({
+    model: model,
+    instance: instance,
+    id: id
+  });
+
+  const allPanels = useMemo(
+    () => [...panels, ...pluginPanels.panels],
+    [panels, pluginPanels.panels]
+  );
+
   const activePanels = useMemo(
-    () => panels.filter((panel) => !panel.hidden && !panel.disabled),
-    [panels]
+    () => allPanels.filter((panel) => !panel.hidden && !panel.disabled),
+    [allPanels]
   );
 
   const setLastUsedPanel = useLocalState((state) =>
@@ -120,7 +140,7 @@ function BasePanelGroup({
       <Paper p="sm" radius="xs" shadow="xs">
         <Tabs value={panel} orientation="vertical" keepMounted={false}>
           <Tabs.List justify="left">
-            {panels.map(
+            {allPanels.map(
               (panel) =>
                 !panel.hidden && (
                   <Tooltip
@@ -162,7 +182,7 @@ function BasePanelGroup({
               </ActionIcon>
             )}
           </Tabs.List>
-          {panels.map(
+          {allPanels.map(
             (panel) =>
               !panel.hidden && (
                 <Tabs.Panel

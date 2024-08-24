@@ -24,7 +24,8 @@ import {
 } from '../../components/items/ActionDropdown';
 import InstanceDetail from '../../components/nav/InstanceDetail';
 import { PageDetail } from '../../components/nav/PageDetail';
-import { PanelGroup, PanelType } from '../../components/nav/PanelGroup';
+import { PanelType } from '../../components/nav/Panel';
+import { PanelGroup } from '../../components/nav/PanelGroup';
 import { ApiEndpoints } from '../../enums/ApiEndpoints';
 import { ModelType } from '../../enums/ModelType';
 import { UserRoles } from '../../enums/Roles';
@@ -286,7 +287,13 @@ export default function ManufacturerPartDetail() {
             editAction={editManufacturerPart.open}
             editEnabled={user.hasChangePermission(ModelType.manufacturerpart)}
           />
-          <PanelGroup pageKey="manufacturerpart" panels={panels} />
+          <PanelGroup
+            pageKey="manufacturerpart"
+            panels={panels}
+            instance={manufacturerPart}
+            model={ModelType.manufacturerpart}
+            id={manufacturerPart.pk}
+          />
         </Stack>
       </InstanceDetail>
     </>
